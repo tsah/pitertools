@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pitertools"
+version = "0.1.0"
+description = ""
+authors = ["tsah <tsah.weiss@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.9.0"
+pytest = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
