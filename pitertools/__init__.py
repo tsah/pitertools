@@ -80,8 +80,6 @@ def _task(
         lock.acquire(blocking=True)
         try:
             current = next(it)
-            transformed = func(current)
-            results_queue.put(transformed, block=True)
         except StopIteration:
             if verbose:
                 print(f"Worker {i} finished")
@@ -94,6 +92,8 @@ def _task(
             break
         finally:
             lock.release()
+        transformed = func(current)
+        results_queue.put(transformed, block=True)
 
 
 class _Error:
