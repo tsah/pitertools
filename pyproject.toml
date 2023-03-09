@@ -4,6 +4,7 @@ version = "0.1.1"
 description = ""
 authors = ["tsah <tsah.weiss@gmail.com>"]
 readme = "README.md"
+repository = "https://github.com/tsah/pitertools"
 
 [tool.poetry.dependencies]
 python = "^3.8"
