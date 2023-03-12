@@ -85,14 +85,15 @@ def _task(
                 print(f"Worker {i} finished")
             results_queue.put(_End(), block=True)
             break
+        finally:
+            lock.release()
+        try:
+            transformed = func(current)
         except Exception as e:
             if verbose:
                 print(f"worker {i} failed with exception {e}")
             results_queue.put(_Error(e), block=True)
             break
-        finally:
-            lock.release()
-        transformed = func(current)
         results_queue.put(transformed, block=True)
 
 
