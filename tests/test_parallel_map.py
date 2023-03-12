@@ -1,4 +1,5 @@
 from itertools import repeat
+from typing import Iterator
 import pytest
 import threading
 import time
@@ -42,7 +43,24 @@ def test_error_handling(num_workers: int) -> None:
     _assert_no_running_threads()
 
 
+@pytest.mark.parametrize("num_workers", [2, 10])
+def test_ordered_unordered(num_workers: int) -> None:
+    n = num_workers + 10
+    def it() -> Iterator[int]:
+        return iter(range(n))
+
+    def func(i):
+        time.sleep(0.1 *(n - i))  # Smaller i <> more sleep
+        return i
+
+    expected_sorted = list(range(n))
+    res = list(map_parallel(func, it(), num_workers, verbose=True))
+    assert res != expected_sorted  # sleep pattern makes it very unlikely to be sorted
+
+    res = list(map_parallel(func, it(), num_workers, ordered=True, verbose=True))
+    assert res == expected_sorted
+
+
 def _assert_no_running_threads() -> None:
     time.sleep(1)
     assert threading.active_count() == 1
-
