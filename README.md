@@ -2,11 +2,11 @@
 Tools to process python iterators in parallel.
 
 ## map_parallel
-Spin up n threads to pull from input iterator and run an operation on it in parallel
+Concurrently run computation on iterator, respecting backpressure.
 
 ## Roadmap
 - Add automated testing, publishing
 - Add more tests 
 - Add some linter, static type checking
-- Allow running on external executor
+- Allow running on Process pool executor
 - Add asyncio implementation
