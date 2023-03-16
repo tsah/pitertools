@@ -9,4 +9,3 @@ Concurrently run computation on iterator, respecting backpressure.
 - Add more tests 
 - Add some linter, static type checking
 - Allow running on Process pool executor
-- Add asyncio implementation

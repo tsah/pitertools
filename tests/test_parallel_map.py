@@ -2,6 +2,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import contextmanager
 from itertools import repeat
 from typing import Iterator, Optional
+from pitertools.map_executor import ExecutorShutdownError
 import pytest
 import threading
 import time
@@ -138,3 +139,13 @@ def test_threadpool_map_doesnt_cause_starvation() -> None:
         time.sleep(1)
         assert tester.did_run
         list(res_generator)  # flush all threads
+
+
+def test_theadpool_is_shutdown_during_processing() -> None:
+    func = lambda i: i
+    it = iter(range(10))
+    executor = ThreadPoolExecutor(max_workers=1)
+    res_generator = map_parallel(func, it, concurrency=1, executor=executor, verbose=True)
+    executor.shutdown()
+    with pytest.raises(ExecutorShutdownError):
+        list(res_generator)

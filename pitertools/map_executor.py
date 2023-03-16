@@ -1,7 +1,7 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from queue import Full, Queue
 from threading import Event, Lock, Thread
-from typing import Any, Callable, Generic, Iterator, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Iterator, List, Optional, Tuple, TypeVar, Union
 
 
 T = TypeVar('T')
@@ -14,6 +14,10 @@ class _Error:
 
 
 class _End:
+    pass
+
+
+class ExecutorShutdownError(Exception):
     pass
 
 
@@ -75,6 +79,8 @@ class _ParallelMapExecutor(Generic[T, G]):
                 self.finished_workers += 1
             elif type(current) == _Error:
                 self._error(current.e)
+            elif type(current) == ExecutorShutdownError:
+                self._error(current)
             else:
                 if self.ordered:
                     self._store(current)
@@ -211,10 +217,16 @@ class _Task(Generic[T, G]):
         try:
             self.results_queue.put(item, block=True, timeout=1)
             if reschedule_run:
-                self.executor.submit(self.run)
+                self._submit_or_fail(self.run)
         except Full:
             self.executor.submit(
                 self.send_and_terminate,
                 item=item,
                 reschedule_run=reschedule_run
             )
+
+    def _submit_or_fail(self, task: Callable[..., Any], **kwargs: Dict[str, Any]) -> None:
+        try:
+            self.executor.submit(task, **kwargs)
+        except RuntimeError:
+            self.results_queue.put(ExecutorShutdownError(), block=True)
