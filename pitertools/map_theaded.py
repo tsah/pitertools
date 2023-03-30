@@ -2,6 +2,8 @@ from typing import Any, Callable, Generic, Iterator, List, Optional, Tuple, Type
 from threading import Event, Lock, Thread
 from queue import Queue
 
+from pitertools.map_parallel import ParallelMap
+
 
 T = TypeVar("T")
 G = TypeVar("G")
@@ -13,7 +15,7 @@ def map_parallel_threaded(
     num_workers: int,
     ordered = False,
     verbose: bool = False
-) -> Iterator[G]:
+) -> ParallelMap[G]:
     """
     Spins up `num_workers` threads that pull from the iterator 
     and perform the `func` operation in parallel.
@@ -23,7 +25,7 @@ def map_parallel_threaded(
     If any thread experiences an exception, all threads shutdown gracefully after finishing
     current computation.
     """
-    return _ParallelMap(func, it, num_workers, ordered, verbose).start()
+    return _ParallelMap(func, it, num_workers, ordered, verbose)
 
 
 class _ParallelMap(Generic[T, G]):
@@ -51,6 +53,11 @@ class _ParallelMap(Generic[T, G]):
         self.thread_stop_events = []
 
     def start(self) -> Iterator[G]:
+        result_iter = self._iter()
+        self.result_iter = result_iter
+        return result_iter
+
+    def _iter(self) -> Iterator[G]:
         self._start_workers()
         while True:
             if self._is_finished():
@@ -67,6 +74,12 @@ class _ParallelMap(Generic[T, G]):
                     yield from self._flush_stored()
                 else:
                     yield current[1]
+
+    def stop(self) -> None:
+        if self.verbose:
+            print("Stopping")
+        self._stop_all_tasks()
+        self._drain_iterator()
 
     def _start_workers(self) -> None:
         for i in range(self.num_workers):
@@ -87,8 +100,16 @@ class _ParallelMap(Generic[T, G]):
             self.thread_stop_events.append(stop_event)
 
     def _stop_all_tasks(self) -> None:
+        if self.verbose:
+            print("Stopping all tasks")
         for event in self.thread_stop_events:
             event.set()
+
+    def _drain_iterator(self) -> None:
+        if self.verbose:
+            print("Draining remaining results")
+        for _ in self.result_iter:
+            pass
 
     def _is_finished(self) -> bool:
         return self.num_workers == self.finished_workers
@@ -166,6 +187,7 @@ class _Worker(Generic[T, G]):
             if self.stop_event.is_set():
                 self._print(f"Worker {self.t_id} stopped")
                 self._send(_End())
+                break
             self.lock.acquire(blocking=True)
             try:
                 current = next(self.it)

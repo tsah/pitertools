@@ -3,6 +3,8 @@ from queue import Full, Queue
 from threading import Event, Lock, Thread
 from typing import Any, Callable, Dict, Generic, Iterator, List, Optional, Tuple, TypeVar, Union
 
+from pitertools.map_parallel import ParallelMap
+
 
 T = TypeVar('T')
 G = TypeVar('G')
@@ -28,7 +30,7 @@ def map_parallel_threadpool(
     concurrency: int,
     ordered = False,
     verbose: bool = False
-) -> Iterator[G]:
+) -> ParallelMap[G]:
     """
     Concurrently runs computation on iterator, on given executor
     (ThreadPoolExecutor, ProcessPoolExecutor).
@@ -39,7 +41,7 @@ def map_parallel_threadpool(
     If any tasks experiences an exception, all running tasks finish gracefully and no new ones
     are submitted.
     """
-    return _ParallelMapExecutor(executor, func, it, concurrency, ordered, verbose).start()
+    return _ParallelMapExecutor(executor, func, it, concurrency, ordered, verbose)
 
 
 class _ParallelMapExecutor(Generic[T, G]):
@@ -69,6 +71,17 @@ class _ParallelMapExecutor(Generic[T, G]):
         self.thread_stop_events = []
 
     def start(self) -> Iterator[G]:
+        result_iter = self._iter()
+        self.result_iter = result_iter
+        return result_iter
+
+    def stop(self) -> None:
+        if self.verbose:
+            print('Stopping')
+        self._stop_all_tasks()
+        self._drain_iter()
+
+    def _iter(self) -> Iterator[G]:
         self._start_tasks()
         while True:
             if self._is_finished():
@@ -101,15 +114,23 @@ class _ParallelMapExecutor(Generic[T, G]):
                 stop_event=stop_event,
                 executor=self.executor
             )
-            thread = Thread(
-                target=task.run
-            )
-            thread.start() 
+            try:
+                self.executor.submit(task.run)
+            except RuntimeError as e:
+                raise ExecutorShutdownError from e
             self.thread_stop_events.append(stop_event)
 
     def _stop_all_tasks(self) -> None:
+        if self.verbose:
+            print("Stopping all workers")
         for event in self.thread_stop_events:
             event.set()
+
+    def _drain_iter(self) -> None:
+        if self.verbose:
+            print("Draining remaining results")
+        for _ in self.result_iter:
+            pass
 
     def _is_finished(self) -> bool:
         return self.concurrency == self.finished_workers
@@ -188,6 +209,7 @@ class _Task(Generic[T, G]):
         if self.stop_event.is_set():
             self._print(f"Worker {self.t_id} stopped")
             self.send_and_terminate(_End(), reschedule_run=False)
+            return
         self.lock.acquire(blocking=True)
         try:
             current = next(self.it)
