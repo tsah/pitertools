@@ -1,4 +1,3 @@
-from concurrent.futures import Executor
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Callable, Iterator, Optional, TypeVar
@@ -18,7 +17,7 @@ def map_parallel(
     concurrency: int,
     ordered = False,
     verbose: bool = False,
-    executor: Optional[Executor] = None
+    executor: Optional[ThreadPoolExecutor] = None
 ) -> Iterator[G]:
     """
     Concurrently pulls items from `it` to run `func` on it, with respect to backpresure - new 
@@ -26,17 +25,14 @@ def map_parallel(
     """
     res = None
     if executor:
-        if isinstance(executor, ThreadPoolExecutor):
-            res = map_parallel_threadpool(
-                executor=executor,
-                func=func,
-                it=it,
-                concurrency=concurrency,
-                ordered=ordered,
-                verbose=verbose
-            )
-        else:
-            raise NotImplementedError()
+        res = map_parallel_threadpool(
+            executor=executor,
+            func=func,
+            it=it,
+            concurrency=concurrency,
+            ordered=ordered,
+            verbose=verbose
+        )
     else:
         res = map_parallel_threaded(
             func=func,
