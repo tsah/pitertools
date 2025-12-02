@@ -1,7 +1,5 @@
 import asyncio
-from collections.abc import Coroutine, Iterator, AsyncIterator
-from concurrent.futures.thread import ThreadPoolExecutor
-import random
+from collections.abc import Iterator, AsyncIterator
 from typing import Callable, TypeVar, Awaitable, Union
 
 T = TypeVar('T')

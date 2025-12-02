@@ -32,7 +32,8 @@ def assert_no_running_threads() -> Iterator[None]:
 def test_test() -> None:
     with _setup_executor(True, 1) as executor:
         it = repeat(1, 10)
-        func = lambda i: i + 1
+        def func(i):
+            return i + 1
         with map_parallel(func, it, 1, executor=executor, verbose=True) as par_it:
             res = [i for i in par_it]
             assert res == list(repeat(2, 10))
@@ -47,7 +48,8 @@ def test_parmap_correcness(
 ) -> None:
     with _setup_executor(use_executor, executor_num_workers) as executor:
         it = repeat(1, 10)
-        func = lambda i: i + 1
+        def func(i):
+            return i + 1
         with map_parallel(func, it, concurrency, executor=executor, verbose=True) as par_it:
             res = [i for i in par_it]
             assert res == list(repeat(2, 10))
@@ -146,7 +148,8 @@ def test_threadpool_map_doesnt_cause_starvation() -> None:
             self.did_run = True
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        func = lambda i: i
+        def func(i):
+            return i
         it = iter(range(1000))
         with map_parallel(func, it, concurrency=100) as res_generator:
             tester = Tester()
@@ -157,7 +160,8 @@ def test_threadpool_map_doesnt_cause_starvation() -> None:
 
 
 def test_threadpool_is_shutdown_during_processing() -> None:
-    func = lambda i: i
+    def func(i):
+        return i
     it = iter(range(10))
     executor = ThreadPoolExecutor(max_workers=1)
     with map_parallel(func, it, concurrency=1, executor=executor, verbose=True) as res_generator:
@@ -171,7 +175,8 @@ def test_closing_context_manager(
     use_executor: bool,
 ) -> None:
     with _setup_executor(use_executor, 10) as executor:
-        func = lambda i: i
+        def func(i):
+            return i
         it = iter(range(100))
         with map_parallel(func, it, concurrency=10, executor=executor, verbose=True) as par_it:
             next(par_it)

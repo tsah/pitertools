@@ -64,9 +64,9 @@ class _ParallelMap(Generic[T, G]):
                 self._raise_if_needed()
                 break
             current = self.results_queue.get(block=True)
-            if type(current) == _End:
+            if isinstance(current, _End):
                 self.finished_workers += 1
-            elif type(current) == _Error:
+            elif isinstance(current, _Error):
                 self._error(current.e)
             else:
                 if self.ordered:
@@ -156,8 +156,10 @@ def _bisect_right(a, x, key) -> int:
     hi = len(a)
     while lo < hi:
         mid = (lo+hi)//2
-        if key(x) < key(a[mid]): hi = mid
-        else: lo = mid+1
+        if key(x) < key(a[mid]):
+            hi = mid
+        else:
+            lo = mid+1
     return lo
 
 
