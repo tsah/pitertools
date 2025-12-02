@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generic, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Generic, Iterator, List, Optional, Tuple, TypeVar, Union
 from threading import Event, Lock, Thread
 from queue import Queue
 
@@ -49,8 +49,8 @@ class _ParallelMap(Generic[T, G]):
         self.current_index: int = 0
         self.stored_items: List[Any] = []
         self.lock = Lock()
-        self.results_queue = Queue(maxsize=num_workers)
-        self.thread_stop_events = []
+        self.results_queue: Queue[Union[Tuple[int, G], _Error, _End]] = Queue(maxsize=num_workers)
+        self.thread_stop_events: List[Event] = []
 
     def start(self) -> Iterator[G]:
         result_iter = self._iter()
@@ -70,10 +70,10 @@ class _ParallelMap(Generic[T, G]):
                 self._error(current.e)
             else:
                 if self.ordered:
-                    self._store(current)
+                    self._store(current)  # type: ignore[arg-type]
                     yield from self._flush_stored()
                 else:
-                    yield current[1]
+                    yield current[1]  # type: ignore[index, assignment]
 
     def stop(self) -> None:
         if self.verbose:
@@ -119,7 +119,7 @@ class _ParallelMap(Generic[T, G]):
             raise self.error
 
     def _flush_stored(self) -> List[G]:
-        res = []
+        res: List[G] = []
         while True:
             if not self.stored_items:
                 return res

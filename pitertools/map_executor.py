@@ -67,8 +67,8 @@ class _ParallelMapExecutor(Generic[T, G]):
         self.current_index: int = 0
         self.stored_items: List[Any] = []
         self.lock = Lock()
-        self.results_queue = Queue(maxsize=concurrency)
-        self.thread_stop_events = []
+        self.results_queue: Queue[Union[Tuple[int, G], _Error, _End, ExecutorShutdownError]] = Queue(maxsize=concurrency)
+        self.thread_stop_events: List[Event] = []
 
     def start(self) -> Iterator[G]:
         result_iter = self._iter()
@@ -96,10 +96,10 @@ class _ParallelMapExecutor(Generic[T, G]):
                 self._error(current)
             else:
                 if self.ordered:
-                    self._store(current)
+                    self._store(current)  # type: ignore[arg-type]
                     yield from self._flush_stored()
                 else:
-                    yield current[1]
+                    yield current[1]  # type: ignore[index, assignment]
 
     def _start_tasks(self) -> None:
         for i in range(self.concurrency):
@@ -140,7 +140,7 @@ class _ParallelMapExecutor(Generic[T, G]):
             raise self.error
 
     def _flush_stored(self) -> List[G]:
-        res = []
+        res: List[G] = []
         while True:
             if not self.stored_items:
                 return res

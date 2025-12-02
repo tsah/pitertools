@@ -5,7 +5,8 @@ from typing import Callable, TypeVar
 
 from pitertools.map_threaded import map_parallel_threaded
 from pitertools.map_executor import map_parallel_threadpool
-from pitertools.map_async import map_parallel_async
+# from pitertools.map_async import map_parallel_async
+from pitertools.map_parallel import ParallelMap
 
 
 T = TypeVar('T')
@@ -25,7 +26,7 @@ def map_parallel(
     Concurrently pulls items from `it` to run `func` on it, with respect to backpresure - new 
     items are pulled from `it` only after results are consumed from the result iterator.
     """
-    res = None
+    res: ParallelMap[G] = None  # type: ignore[assignment]
     if executor:
         res = map_parallel_threadpool(
             executor=executor,
@@ -44,6 +45,6 @@ def map_parallel(
             verbose=verbose
         )
     try:
-        yield res.start()
+        yield from res.start()  # type: ignore[misc]
     finally:
         res.stop()
