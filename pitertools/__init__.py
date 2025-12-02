@@ -1,9 +1,11 @@
+from collections.abc import Iterator
 from concurrent.futures.thread import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, TypeVar
+from typing import Callable, TypeVar
 
-from pitertools.map_theaded import map_parallel_threaded
+from pitertools.map_threaded import map_parallel_threaded
 from pitertools.map_executor import map_parallel_threadpool
+from pitertools.map_async import map_parallel_async
 
 
 T = TypeVar('T')
@@ -17,7 +19,7 @@ def map_parallel(
     concurrency: int,
     ordered = False,
     verbose: bool = False,
-    executor: Optional[ThreadPoolExecutor] = None
+    executor: ThreadPoolExecutor | None = None
 ) -> Iterator[G]:
     """
     Concurrently pulls items from `it` to run `func` on it, with respect to backpresure - new 

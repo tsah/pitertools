@@ -1,19 +1,17 @@
-[tool.poetry]
+[project]
 name = "pitertools"
-version = "0.5.0"
+version = "0.6.0"
 description = ""
-authors = ["tsah <tsah.weiss@gmail.com>"]
+authors = [{name = "tsah", email = "tsah.weiss@gmail.com"}]
 readme = "README.md"
-repository = "https://github.com/tsah/pitertools"
+requires-python = ">=3.8.0"
 
-[tool.poetry.dependencies]
-python=">=3.8.0,<3.12.0"
-
-[tool.poetry.group.dev.dependencies]
-ipython = "^8.9.0"
-pytest = "*"
-
+[project.optional-dependencies]
+dev = [
+    "ipython>=8.9.0",
+    "pytest",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
