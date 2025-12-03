@@ -1,6 +1,6 @@
 [project]
 name = "pitertools"
-version = "0.6.1"
+version = "0.7.0"
 description = ""
 authors = [{name = "tsah", email = "tsah.weiss@gmail.com"}]
 readme = "README.md"
